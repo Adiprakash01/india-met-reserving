@@ -1,0 +1,2 @@
+install.packages(c("ChainLadder", "actuar", "dplyr", "tibble",
+                   "ggplot2", "tidyr", "purrr", "scales"))
