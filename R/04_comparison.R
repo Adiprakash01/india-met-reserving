@@ -182,38 +182,39 @@ cat("Saved: outputs/plots/final_comparison.png\n")
 # why Engineering needs BF
 
 plot_link_ratio_stability <- function(cl_triangle, line_name) {
-
+  
   ata_matrix <- ata(cl_triangle)
-  n_dev      <- ncol(ata_matrix)
-  n_ay       <- nrow(ata_matrix)
-
-  # Convert to long format
-  ata_long <- as.data.frame(ata_matrix) %>%
-    mutate(AccidentYear = rownames(ata_matrix)) %>%
+  
+  # Convert to data frame properly before reshaping
+  ata_df <- as.data.frame(ata_matrix)
+  ata_df$AccidentYear <- rownames(ata_matrix)
+  
+  ata_long <- ata_df %>%
     pivot_longer(cols = -AccidentYear,
                  names_to  = "DevPeriod",
                  values_to = "LinkRatio") %>%
     filter(!is.na(LinkRatio))
-
+  
   p <- ggplot(ata_long, aes(x = DevPeriod, y = LinkRatio, colour = AccidentYear)) +
     geom_point(size = 2.5, alpha = 0.8) +
     geom_hline(
       data = ata_long %>%
         group_by(DevPeriod) %>%
-        summarise(mean_lr = mean(LinkRatio, na.rm = TRUE)),
+        summarise(mean_lr = mean(LinkRatio, na.rm = TRUE), .groups = "drop"),
       aes(yintercept = mean_lr),
-      colour = "black", linetype = "dashed", linewidth = 0.7
+      colour = "black", linetype = "dashed", linewidth = 0.7,
+      inherit.aes = FALSE
     ) +
     labs(
       title    = paste0(line_name, ": Individual Link Ratios by Accident Year"),
-      subtitle = "Dashed line = volume-weighted average (used by CL). \nOutliers indicate CAT contamination or parameter instability.",
+      subtitle = "Dashed line = volume-weighted average used by CL.\nOutliers indicate CAT contamination.",
       x        = "Development Period",
       y        = "Age-to-Age Factor",
       colour   = "Accident Year"
     ) +
     theme_minimal(base_size = 11) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+  
   ggsave(
     paste0("outputs/plots/link_ratio_stability_", tolower(line_name), ".png"),
     p, width = 11, height = 6, dpi = 150
